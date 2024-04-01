@@ -52,10 +52,12 @@ export const blogRouter = new Hono<{
         title: body.title,
         content: body.content,
         authorId: parseInt(authorId),
+        
       }
     });
     return c.json({
       id: blog.id,
+      
     });
   })
   
@@ -89,10 +91,21 @@ export const blogRouter = new Hono<{
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
-    const body = await c.req.json();
-    const blogs = await prisma.blog.findMany();
+    const blogs = await prisma.blog.findMany({
+      select: {
+        content: true,
+        id: true,
+        title: true,
+        author: {
+          select:{
+             name: true,
+        }
+      }
+      }
+  });
     return c.json({
       blogs,
+      
     });
   });
   
@@ -101,16 +114,27 @@ export const blogRouter = new Hono<{
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
-    const body = await c.req.json();
+    
     const id = c.req.param("id");
     try{
+      // console.log(id,"Code entering try block");
       const blog = await prisma.blog.findFirst({
         where:{
           id: Number(id),
         },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          author: {
+            select: {
+              name: true
+            }
+          }
+        }
       });
       return c.json({
-       blog,
+       blog: blog,
       });
     }catch(e){
       c.status(404);
